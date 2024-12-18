@@ -128,6 +128,28 @@ def get_new_car():
     else:
         return jsonify({'message': 'No active round or car selected.'}), 404
 
+@app.route('/car_images/<int:car_id>', methods=['GET'])
+def get_car_images(car_id):
+    try:
+        cursor.execute("""
+            SELECT image_data
+            FROM car_images
+            WHERE car_id = ?
+        """, (car_id,))
+        images = cursor.fetchall()
+        image_urls = []
+        for image in images:
+            image_data = image[0]
+            if image_data:
+                base64_image = base64.b64encode(image_data).decode('utf-8')
+                image_urls.append(f"data:image/jpeg;base64,{base64_image}")
+        if not image_urls:
+            return jsonify({'message': 'No images found for this car.'}), 404
+        return jsonify({'images': image_urls}), 200
+    except Exception as e:
+        logging.error(f"Error fetching car images: {e}")
+        return jsonify({'message': 'Failed to fetch car images.'}), 500
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
